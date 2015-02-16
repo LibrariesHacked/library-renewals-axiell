@@ -5,7 +5,7 @@ function CheckLoans() {
     var PIN = '[[Member PIN]]';
     var emailAddress = '[[Email address for alert]]';
 
-    // library variables.  In this example LibrariesWest
+    // library details - in this case an id and web service for LibrariesWest
     var libraryId = '280001';
     var libraryUrl = 'http://91.106.192.135/arena.pa.palma/loans';
 
@@ -15,6 +15,8 @@ function CheckLoans() {
     // at less than 5 days to go, send an email notification
     var daysToSendEmail = 5;
 
+    // setting up some data for the script
+    // includes XML to post to the web service
     var d = new Date();
     var renewals = '';
     var today = new Date();
@@ -22,9 +24,13 @@ function CheckLoans() {
     var renewPayload = '<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:loan="http://loans.palma.services.arena.axiell.com/" xmlns:ren="http://axiell.com/arena/services/palma/patron/renewLoansRequest" xmlns:util="http://axiell.com/arena/services/palma/util" xmlns:loan1="http://axiell.com/arena/services/palma/util/loan"><soapenv:Header/><soapenv:Body><loan:RenewLoans><ren:renewLoansRequest><util:arenaMember>' + libraryId + '</util:arenaMember><util:user>' + memberId + '</util:user><util:password>' + PIN + '</util:password><util:language>en</util:language><ren:loans>[[renewals]]</ren:loans></ren:renewLoansRequest></loan:RenewLoans></soapenv:Body></soapenv:Envelope>';
     var loansOptions = { 'method': 'POST', 'content-type': 'application/xml; charset=utf-8', 'payload': checkLoanPayload };
     var renewOptions = { 'method': 'POST', 'content-type': 'application/xml; charset=utf-8', 'payload': renewPayload };
-    var getLoans = UrlFetchApp.fetch('', loansOptions);
 
+
+    // start - get loans data
+    var getLoans = UrlFetchApp.fetch('', loansOptions);
     var responseText = getLoans.getContentText();
+
+    // do the XML parsing to get a list of loans
     var docRoot = XmlService.parse(responseText).getRootElement();
     var ns = docRoot.getNamespace();
     var loansRequest = docRoot.getChildren('Body', ns)[0].getChildren()[0].getChildren()[0];
@@ -35,6 +41,8 @@ function CheckLoans() {
     var emailText = 'hi libraries hacked,\n';
     var sendEmail = false;
     var renew = false;
+
+    // loop through each loan and construct the email body (if necessary)
     for (var x in loanItems) {
         var loan = loanItems[x];
         ns = loan.getNamespace();
@@ -56,9 +64,9 @@ function CheckLoans() {
         if (dateDifference <= daysToSendEmail) {
             sendEmail = true;
             if (dateDifference <= daysToRenew) {
-                // it's so late we need to renew it, but also send a stern email.
+                // it's so late we need to renew, but say this in the email.
                 renew = true;
-                emailText += 'renewed ' + title + ', ' + author + ' reserved on ' + reservedDate + '.  remember to finish and return soon.\n';
+                emailText += 'items has been renewed ' + title + ', ' + author + ' reserved on ' + reservedDate + '.  remember to finish and return soon.\n';
                 renewals += '<loan1:id>' + id + '</loan1:id>'
             }
             else {
@@ -71,7 +79,7 @@ function CheckLoans() {
     // renew whatever items are due to renew
     if (renew) {
         renewPayload = renewPayload.replace('[[renewals]]', renewals);
-        UrlFetchApp.fetch('http://91.106.192.135/arena.pa.palma/loans', renewOptions);
+        UrlFetchApp.fetch(libraryUrl, renewOptions);
     }
 
     // send out the email
@@ -79,3 +87,4 @@ function CheckLoans() {
         MailApp.sendEmail(emailAddress, 'library notification report', emailText);
     }
 }
+
