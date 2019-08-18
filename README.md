@@ -1,6 +1,6 @@
 # Library notifications and renewals.  Axiell.
 
-Google apps script for producing library loans notifications and auto renewals for library users where the library is using Axiell's Arena Library Management System website.
+Google apps script for producing library loans notifications and auto renewals. For library members where the library is using Axiell's Arena website.
 
 ## What is it?
 
@@ -12,5 +12,4 @@ There are ways of quickly copying existing Google Apps scripts into a user accou
 
 1. In Google Drive select New > New Apps Script.
 2. Paste the contents of the script
-3. Change the optional parameters at the top to mathcn your details and library service
-
+3. Change the optional parameters at the top to match your details and library service
